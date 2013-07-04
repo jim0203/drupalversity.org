@@ -1,3 +1,40 @@
-name = Drupalversity Custom Module
-description = Includes a load of custom code for Drupalversity.
-core = 7.x
+<?php
+
+/**
+ * Implements hook_menu_alter
+ */
+function custom_menu_alter(&$items){
+  $items['node/%node/edit']['access callback'] = 'custom_check_node_access';
+}
+
+/**
+ * Custom menu access callback for node/%node/edit
+ */
+function custom_check_node_access($op, $node){
+  global $user;
+  // Note $op and $node are passed in default node_menu access arguments
+  // Allow bypass by users with administer nodes permission
+  if (($op == 'update') && (!user_access('edit locked nodes'))) {
+    // Allow edit access to node author if within time limit
+    if ($user->uid == $node->uid) {
+      $limit = variable_get('node_edit_limit', (15 * 60));
+      if ((REQUEST_TIME - $node->created) > $limit) {
+        drupal_set_message(t('Edit time limit exceeded'));
+        return FALSE;
+      } else {
+        return TRUE;
+      }
+    }
+  }
+  // Fallback to regular node_access checks
+  return node_access($op, $node);
+}
+
+function custom_permission() {
+  return array(
+    'edit locked nodes' => array(
+      'title' => t('Edit time-locked nodes'),
+      'description' => t('Edit nodes that have been time-locked by custom.module'),
+    ),
+  );
+}
