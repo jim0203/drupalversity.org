@@ -1,0 +1,3 @@
+name = Drupalversity Custom Module
+description = Includes a load of custom code for Drupalversity.
+core = 7.x
